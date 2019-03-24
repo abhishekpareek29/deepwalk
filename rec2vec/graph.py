@@ -106,6 +106,12 @@ def append_node(data, category, nodelist, nodedict, ID):
         ID += 1
     return nodedict, nodelist, ID
 
+def add_edge(entity, nodedict, movie_node):
+    for x in entity:
+        entity_node = nodedict[x]
+        entity_node.neighbors.append(movie_node)
+        movie_node.neighbors.append(entity_node)
+    return entity_node, movie_node
 
 def records_to_graph():
     """
@@ -159,43 +165,11 @@ def records_to_graph():
         ID += 1
 
     nodedict, nodelist, ID = append_node(directors, 'director', nodelist, nodedict, ID)
-    # for d in directors:
-    #   n = Node(ID, d, 'director')
-    #   nodedict[d] = n
-    #   nodelist.append(n)
-    #   ID += 1
-
     nodedict, nodelist, ID = append_node(actors, 'actor', nodelist, nodedict, ID)
-    # for a in actors:
-    #   n = Node(ID, a, 'actor')
-    #   nodedict[a] = n
-    #   nodelist.append(n)
-    #   ID += 1
-
     nodedict, nodelist, ID = append_node(genres, 'genre', nodelist, nodedict, ID)
-    # for g in genres:
-    #   n = Node(ID, g, 'genre')
-    #   nodedict[g] = n
-    #   nodelist.append(n)
-    #   ID += 1
-
     nodedict, nodelist, ID = append_node(ratings, 'user', nodelist, nodedict, ID)
-    # for u in ratings:
-    #   n = Node(ID, u, 'user')
-    #   nodedict[u] = n
-    #   nodelist.append(n)
-    #   ID += 1
-
 
     # Add edges between users and movie-rating nodes
-    # Add edges between movies and directors
-    # Add edges between movies and actors
-    # Add edges between movies and genres
-    # Add edges between movie ratings and movies
-    # By "add an edge" we mean to update the neighbors list of the nodes in both directions:
-    #   e.g.,
-    #           director_node.neighbors.append(movie_node)
-    #           movie_node.neighbors.append(director_node)
     # YOUR CODE HERE
 
     for u in ratings:
@@ -216,16 +190,10 @@ def records_to_graph():
         director_node.neighbors.append(movie_node)
 
       actorsInMovie = temp.actors
-      for a in actorsInMovie:
-        actor_node = nodedict[a]
-        actor_node.neighbors.append(movie_node)
-        movie_node.neighbors.append(actor_node)
+      actor_node, movie_node = add_edge(actorsInMovie, nodedict, movie_node)
 
       movieGenres = temp.genres
-      for g in movieGenres:
-        genre_node = nodedict[g]
-        genre_node.neighbors.append(movie_node)
-        movie_node.neighbors.append(genre_node)
+      genre_node, movie_node = add_edge(movieGenres, nodedict, movie_node)
 
       for r in ratingsRange:
         rnode = m+"_"+r
@@ -234,9 +202,6 @@ def records_to_graph():
         movie_node.neighbors.append(rating_node)
 
     # =======================================
-
-    # Add edges between users and movie-rating nodes
-    # YOUR CODE HERE
 
 
     # Write out the graph
