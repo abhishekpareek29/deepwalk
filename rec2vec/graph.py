@@ -98,7 +98,13 @@ def load_movie_data():
     return movies, directors, actors, genres
 
 
-
+def append_node(data, category, nodelist, nodedict, ID):
+    for x in data:
+        n = Node(ID, x, category)
+        nodedict[x] = n
+        nodelist.append(n)
+        ID += 1
+    return nodedict, nodelist, ID
 
 
 def records_to_graph():
@@ -152,30 +158,33 @@ def records_to_graph():
         nodelist.append(n)
         ID += 1
 
+    nodedict, nodelist, ID = append_node(directors, 'director', nodelist, nodedict, ID)
+    # for d in directors:
+    #   n = Node(ID, d, 'director')
+    #   nodedict[d] = n
+    #   nodelist.append(n)
+    #   ID += 1
 
-    for d in directors:
-      n = Node(ID, d, 'director')
-      nodedict[d] = n
-      nodelist.append(n)
-      ID += 1
+    nodedict, nodelist, ID = append_node(actors, 'actor', nodelist, nodedict, ID)
+    # for a in actors:
+    #   n = Node(ID, a, 'actor')
+    #   nodedict[a] = n
+    #   nodelist.append(n)
+    #   ID += 1
 
-    for a in actors:
-      n = Node(ID, a, 'actor')
-      nodedict[a] = n
-      nodelist.append(n)
-      ID += 1
+    nodedict, nodelist, ID = append_node(genres, 'genre', nodelist, nodedict, ID)
+    # for g in genres:
+    #   n = Node(ID, g, 'genre')
+    #   nodedict[g] = n
+    #   nodelist.append(n)
+    #   ID += 1
 
-    for g in genres:
-      n = Node(ID, g, 'genre')
-      nodedict[g] = n
-      nodelist.append(n)
-      ID += 1
-
-    for u in ratings:
-      n = Node(ID, u, 'user')
-      nodedict[u] = n
-      nodelist.append(n)
-      ID += 1
+    nodedict, nodelist, ID = append_node(ratings, 'user', nodelist, nodedict, ID)
+    # for u in ratings:
+    #   n = Node(ID, u, 'user')
+    #   nodedict[u] = n
+    #   nodelist.append(n)
+    #   ID += 1
 
 
     # Add edges between users and movie-rating nodes
