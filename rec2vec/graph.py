@@ -150,7 +150,8 @@ def records_to_graph():
     nodelist = []
     nodedict = {}
 
-    # =======================================
+    # YOUR CODE HERE
+
     ID = 0
     ratingsRange = ['1','2','3','4','5']
 
@@ -201,9 +202,6 @@ def records_to_graph():
         rating_node = nodedict[rnode]
         rating_node.neighbors.append(movie_node)
         movie_node.neighbors.append(rating_node)
-
-    # =======================================
-
 
     # Write out the graph
     for node in nodelist:
