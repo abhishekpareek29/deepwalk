@@ -47,7 +47,7 @@ class Movie(object):
     def __init__(self, name):
         self.name = name
         self.director = None
-        self.actors = [] 
+        self.actors = []
         self.genres = []
 
 
@@ -57,7 +57,7 @@ def load_movie_data():
     movies_actors_filename = "./data/movie_actors.dat"
     movies_genres_filename = "./data/movie_genres.dat"
     movies_filename = "./data/movies.dat"
-    
+
     # Load the data about the movies into a dictionary
     # The dictionary maps a movie ID to a movie object
     # Also store the unique directors, actors, and genres
@@ -67,7 +67,7 @@ def load_movie_data():
         for line in fin:
             m_id, name = line.strip().split()[:2]
             movies["m"+m_id] = Movie(name)
-    
+
     directors = set([])
     with codecs.open(movies_directors_filename, "r+",encoding='utf-8', errors='ignore') as fin:
         fin.readline()  # burn metadata line
@@ -76,7 +76,7 @@ def load_movie_data():
             if "m"+m_id in movies:
                 movies["m"+m_id].director = director
             directors.add(director)
-    
+
     actors = set([])
     with codecs.open(movies_actors_filename, "r+",encoding='utf-8', errors='ignore') as fin:
         fin.readline()  # burn metadata line
@@ -85,7 +85,7 @@ def load_movie_data():
             if "m"+m_id in movies:
                 movies["m"+m_id].actors.append(actor)
             actors.add(actor)
-    
+
     genres = set([])
     with codecs.open(movies_genres_filename, "r+",encoding='utf-8', errors='ignore') as fin:
         fin.readline()  # burn metadata line
@@ -97,8 +97,8 @@ def load_movie_data():
 
     return movies, directors, actors, genres
 
-    
-    
+
+
 
 
 def records_to_graph():
@@ -112,7 +112,7 @@ def records_to_graph():
     Edges are added based on the datasets; e.g., actor a1 was in movie m1, so an edge is created between m1 and a1.
     The movie rating node 124_2, for example, will be connected to movie 124 and any users who rated 124 as a 2.
     """
-    
+
     # Output files for the graph
     adjlist_file = open("./out.adj", 'w')
     node_list_file = open("./nodelist.txt", 'w')
@@ -131,12 +131,100 @@ def records_to_graph():
             ratings["u"+user]["m"+movie] = rating
             num_ratings += 1
     movies, directors, actors, genres = load_movie_data()
-    
-    
+
+
     # Create nodes for the different entities in the graph
     nodelist = []
     nodedict = {}
+
+    # =======================================
+    ID = 0
+    ratingsRange = ['1','2','3','4','5']
+
+    for m in movies:
+      n = Node(ID, m, 'movie')
+      nodedict[m] = n
+      nodelist.append(n)
+      ID += 1
+      for r in ratingsRange:
+        n = Node(ID, m+"_"+r, 'movie-rating')
+        nodedict[m+"_"+r] = n
+        nodelist.append(n)
+        ID += 1
+
+
+    for d in directors:
+      n = Node(ID, d, 'director')
+      nodedict[d] = n
+      nodelist.append(n)
+      ID += 1
+
+    for a in actors:
+      n = Node(ID, a, 'actor')
+      nodedict[a] = n
+      nodelist.append(n)
+      ID += 1
+
+    for g in genres:
+      n = Node(ID, g, 'genre')
+      nodedict[g] = n
+      nodelist.append(n)
+      ID += 1
+
+    for u in ratings:
+      n = Node(ID, u, 'user')
+      nodedict[u] = n
+      nodelist.append(n)
+      ID += 1
+
+
+    # Add edges between users and movie-rating nodes
+    # Add edges between movies and directors
+    # Add edges between movies and actors
+    # Add edges between movies and genres
+    # Add edges between movie ratings and movies
+    # By "add an edge" we mean to update the neighbors list of the nodes in both directions:
+    #   e.g.,
+    #           director_node.neighbors.append(movie_node)
+    #           movie_node.neighbors.append(director_node)
     # YOUR CODE HERE
+
+    for u in ratings:
+      temp = ratings[u]
+      user_node = nodedict[u]
+      for m in temp:
+        rnode = m+"_"+temp[m]
+        movie_rating_node = nodedict[rnode]
+        user_node.neighbors.append(movie_rating_node)
+        movie_rating_node.neighbors.append(user_node)
+
+    for m in movies:
+      temp = movies[m]
+      movie_node = nodedict[m]
+      if (temp.director != None):
+        director_node = nodedict[temp.director]
+        movie_node.neighbors.append(director_node)
+        director_node.neighbors.append(movie_node)
+
+      actorsInMovie = temp.actors
+      for a in actorsInMovie:
+        actor_node = nodedict[a]
+        actor_node.neighbors.append(movie_node)
+        movie_node.neighbors.append(actor_node)
+
+      movieGenres = temp.genres
+      for g in movieGenres:
+        genre_node = nodedict[g]
+        genre_node.neighbors.append(movie_node)
+        movie_node.neighbors.append(genre_node)
+
+      for r in ratingsRange:
+        rnode = m+"_"+r
+        rating_node = nodedict[rnode]
+        rating_node.neighbors.append(movie_node)
+        movie_node.neighbors.append(rating_node)
+
+    # =======================================
 
     # Add edges between users and movie-rating nodes
     # YOUR CODE HERE
@@ -151,7 +239,7 @@ def records_to_graph():
         adjlist_file.write("\n")
     adjlist_file.close()
     node_list_file.close()
-    
+
     return nodedict
 
 
@@ -159,7 +247,7 @@ def records_to_graph():
 
 
 class Graph(defaultdict):
-  """Efficient basic implementation of nx `Graph' â€“ Undirected graphs with self loops"""  
+  """Efficient basic implementation of nx `Graph' â€“ Undirected graphs with self loops"""
   def __init__(self):
     super(Graph, self).__init__(list)
 
@@ -171,22 +259,22 @@ class Graph(defaultdict):
 
   def subgraph(self, nodes={}):
     subgraph = Graph()
-    
+
     for n in nodes:
       if n in self:
         subgraph[n] = [x for x in self[n] if x in nodes]
-        
+
     return subgraph
 
   def make_undirected(self):
-  
+
     t0 = time()
 
     for v in self.keys():
       for other in self[v]:
         if v != other:
           self[other].append(v)
-    
+
     t1 = time()
     logger.info('make_directed: added missing edges {}s'.format(t1-t0))
 
@@ -197,7 +285,7 @@ class Graph(defaultdict):
     t0 = time()
     for k in iterkeys(self):
       self[k] = list(sorted(set(self[k])))
-    
+
     t1 = time()
     logger.info('make_consistent: made consistent in {}s'.format(t1-t0))
 
@@ -211,10 +299,10 @@ class Graph(defaultdict):
     t0 = time()
 
     for x in self:
-      if x in self[x]: 
+      if x in self[x]:
         self[x].remove(x)
         removed += 1
-    
+
     t1 = time()
 
     logger.info('remove_self_loops: removed {} loops in {}s'.format(removed, (t1-t0)))
@@ -225,7 +313,7 @@ class Graph(defaultdict):
       for y in self[x]:
         if x == y:
           return True
-    
+
     return False
 
   def has_edge(self, v1, v2):
@@ -241,7 +329,7 @@ class Graph(defaultdict):
 
   def order(self):
     "Returns the number of nodes in the graph"
-    return len(self)    
+    return len(self)
 
   def number_of_edges(self):
     "Returns the number of nodes in the graph"
@@ -283,12 +371,12 @@ def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
   walks = []
 
   nodes = list(G.nodes())
-  
+
   for cnt in range(num_paths):
     rand.shuffle(nodes)
     for node in nodes:
       walks.append(G.random_walk(path_length, rand=rand, alpha=alpha, start=node))
-  
+
   return walks
 
 def build_deepwalk_corpus_iter(G, num_paths, path_length, alpha=0,
@@ -320,7 +408,7 @@ def parse_adjacencylist(f):
       row = [introw[0]]
       row.extend(set(sorted(introw[1:])))
       adjlist.extend([row])
-  
+
   return adjlist
 
 def parse_adjacencylist_unchecked(f):
@@ -328,7 +416,7 @@ def parse_adjacencylist_unchecked(f):
   for l in f:
     if l and l[0] != "#":
       adjlist.extend([[int(x) for x in l.strip().split()]])
-  
+
   return adjlist
 
 def load_adjacencylist(file_, undirected=False, chunksize=10000, unchecked=True):
@@ -346,11 +434,11 @@ def load_adjacencylist(file_, undirected=False, chunksize=10000, unchecked=True)
 
   with open(file_) as f:
     with ProcessPoolExecutor(max_workers=cpu_count()) as executor:
-      total = 0 
+      total = 0
       for idx, adj_chunk in enumerate(executor.map(parse_func, grouper(int(chunksize), f))):
           adjlist.extend(adj_chunk)
           total += len(adj_chunk)
-  
+
   t1 = time()
 
   logger.info('Parsed {} edges with {} chunks in {}s'.format(total, idx, t1-t0))
@@ -367,7 +455,7 @@ def load_adjacencylist(file_, undirected=False, chunksize=10000, unchecked=True)
     t1 = time()
     logger.info('Made graph undirected in {}s'.format(t1-t0))
 
-  return G 
+  return G
 
 
 def load_edgelist(file_, undirected=True):
@@ -380,7 +468,7 @@ def load_edgelist(file_, undirected=True):
       G[x].append(y)
       if undirected:
         G[y].append(x)
-  
+
   G.make_consistent()
   return G
 
@@ -424,7 +512,7 @@ def from_numpy(x, undirected=True):
 
 def from_adjlist(adjlist):
     G = Graph()
-    
+
     for row in adjlist:
         node = row[0]
         neighbors = row[1:]
@@ -435,7 +523,7 @@ def from_adjlist(adjlist):
 
 def from_adjlist_unchecked(adjlist):
     G = Graph()
-    
+
     for row in adjlist:
         node = str(row[0])
         neighbors = map(str, row[1:])
