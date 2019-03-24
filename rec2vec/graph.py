@@ -107,6 +107,7 @@ def append_node(data, category, nodelist, nodedict, ID):
     return nodedict, nodelist, ID
 
 def add_edge(entity, nodedict, movie_node):
+    entity_node = None
     for x in entity:
         entity_node = nodedict[x]
         entity_node.neighbors.append(movie_node)
